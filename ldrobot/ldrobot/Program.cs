@@ -3,15 +3,26 @@ class Program
 {
     static void Main()
     {
-        LidarData lidar = new LidarData("COM5", 230400); //get paramtre
+        LidarReader lidar = new LidarReader("COM5", 230400); //get paramters
 
-        lidar.StartReading();
-        Console.WriteLine("Reading LIDAR data. Press Enter to stop.");
-        Console.ReadLine();
+        try
+        {
+            Console.WriteLine("Reading LIDAR data. Press Enter to stop.");
 
-        lidar.StopReading();
-
-        Console.WriteLine("LIDAR reading stopped. Press Enter to exit.");
-        Console.ReadLine();
+            while (!Console.KeyAvailable)
+            {
+                lidar.StartReading();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occurred while trying to read lidar data" + ex.Message);
+        }
+        finally 
+        { 
+            lidar.StopReading();
+            Console.WriteLine("LIDAR reading stopped. Press Enter to exit.");
+            Console.ReadLine();
+        }
     }
 }
