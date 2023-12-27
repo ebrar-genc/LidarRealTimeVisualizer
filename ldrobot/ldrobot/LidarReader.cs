@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Net.Sockets;
 using System.ComponentModel.DataAnnotations;
+using ldrobot;
 
 /// <summary>
 /// Represents the data structure for LIDAR data.
@@ -10,34 +11,47 @@ using System.ComponentModel.DataAnnotations;
 public class LidarReader
 {
     private SerialPort serialPort;
+    private int PacketLen;
 
     public LidarReader(string portName, int baudRate)
     {
+        PacketLen = 47;
         Debug.WriteLine("Initializing LIDAR");
 
-        serialPort = new SerialPort(portName, baudRate);
-        serialPort.Open();
+        try
+        {
+            serialPort = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
+            serialPort.Open();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("Error opening serial port: " + ex.Message);
+        }
+
     }
     
 
     public void StartReading()
     {
-        byte[] buffer = new byte[47];
+        byte[] buffer = new byte[PacketLen];
         var header = serialPort.ReadByte();
 
         if (header == 0x54)
         {
             LidarPacket lidarPacket = new LidarPacket();
+            LidarCrc lidarCrc = new LidarCrc();
 
             buffer[0] = 0x54;
-            for (int i = 1; i < 47; i++)
+            for (int i = 1; i < PacketLen; i++)
             {
                 buffer[i] = (byte)serialPort.ReadByte();
             }
             lidarPacket = ParseLidarData(buffer, lidarPacket);
             AppendToFile(buffer);
             StepAnalysis(lidarPacket);
-            Debug.WriteLine(lidarPacket.ToString());
+            //lidarPacket.ToString(); 
+            byte crcValue = lidarCrc.CalculateCrc8(buffer, buffer.Length - 1);
+            Debug.WriteLine(crcValue.ToString());
 
         }
     }
@@ -60,11 +74,11 @@ public class LidarReader
             lidarPacket.StartAngle = (ushort)((rawData[5] << 8) | rawData[4]);
 
             // Extract Data (2 bytes distance, 1 byte intensity per measurement point)
-            lidarPacket.Data = new List<(ushort Distance, byte Intensity)>();
+            lidarPacket.Data = new List<(ushort Distance, ushort Intensity)>();
             for (int i = 0; i < 36; i += 3)
             {
                 ushort distance = (ushort)((rawData[i + 7] << 8) | rawData[i + 6]);
-                byte intensity = rawData[i + 8];
+                ushort intensity = rawData[i + 8];
                 lidarPacket.Data.Add((distance, intensity)); //(mm)
             }
 
@@ -72,7 +86,7 @@ public class LidarReader
 
             lidarPacket.Timestamp = (ushort)((rawData[45] << 8) | rawData[44]);
 
-            lidarPacket.CrcCheck = (rawData[46]);
+            lidarPacket.Crc = (rawData[46]);
         }
         return lidarPacket;
     }
@@ -93,7 +107,7 @@ public class LidarReader
         {
             foreach (byte b in buffer)
             {
-                sw.Write(b + " ");
+                sw.Write(b.ToString("X2") + " ");
             }
             sw.WriteLine();
         }
