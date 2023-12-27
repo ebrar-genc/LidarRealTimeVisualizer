@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net.Sockets;
 using System.ComponentModel.DataAnnotations;
 using ldrobot;
+using System.Reflection.PortableExecutable;
 
 /// <summary>
 /// Represents the data structure for LIDAR data.
@@ -12,10 +13,14 @@ public class LidarReader
 {
     private SerialPort serialPort;
     private int PacketLen;
+    private int CrcCheck;
+    private int MeasuringPoint;
 
     public LidarReader(string portName, int baudRate)
     {
         PacketLen = 47;
+        CrcCheck = 0;
+        MeasuringPoint = 12;
         Debug.WriteLine("Initializing LIDAR");
 
         try
@@ -30,7 +35,6 @@ public class LidarReader
 
     }
     
-
     public void StartReading()
     {
         byte[] buffer = new byte[PacketLen];
@@ -39,20 +43,38 @@ public class LidarReader
         if (header == 0x54)
         {
             LidarPacket lidarPacket = new LidarPacket();
-            LidarCrc lidarCrc = new LidarCrc();
-
             buffer[0] = 0x54;
             for (int i = 1; i < PacketLen; i++)
             {
                 buffer[i] = (byte)serialPort.ReadByte();
             }
-            lidarPacket = ParseLidarData(buffer, lidarPacket);
-            AppendToFile(buffer);
-            StepAnalysis(lidarPacket);
-            //lidarPacket.ToString(); 
-            byte crcValue = lidarCrc.CalculateCrc8(buffer, buffer.Length - 1);
-            Debug.WriteLine(crcValue.ToString());
+            lidarPacket.ParseLidarData(buffer, MeasuringPoint);
+            AppendToFileBuffer(buffer);
+            lidarPacket.AppendToFilePacket();
+            ValidateCrc(buffer);
+            lidarPacket.CalculateAngles(MeasuringPoint);
+        }
+    }
 
+    private void ValidateCrc(byte[] buffer)
+    {
+        LidarCrc lidarCrc = new LidarCrc();
+
+        byte calculatedCrc = lidarCrc.CalculateCrc8(buffer, buffer.Length - 1);
+        bool check = calculatedCrc == buffer[buffer.Length - 1];
+        CrcCheck++;
+
+        if (check)
+        {
+            if (CrcCheck == 10)
+            {
+                Debug.WriteLine("Data was received successfully");
+                CrcCheck = 0;
+            }
+        }
+        else
+        {
+            Debug.WriteLine("CRC Check Failed!");
         }
     }
 
@@ -61,49 +83,11 @@ public class LidarReader
         serialPort.Close();
     }
 
-    public LidarPacket ParseLidarData(byte[] rawData, LidarPacket lidarPacket)
+ 
+
+    private void AppendToFileBuffer(byte[] buffer)
     {
-
-        if (rawData != null && rawData.Length == 47)
-        {
-            lidarPacket.Header = rawData[0];
-            lidarPacket.VerLen = rawData[1];
-
-            lidarPacket.Speed = (ushort)((rawData[3] << 8) | rawData[2]);
-
-            lidarPacket.StartAngle = (ushort)((rawData[5] << 8) | rawData[4]);
-
-            // Extract Data (2 bytes distance, 1 byte intensity per measurement point)
-            lidarPacket.Data = new List<(ushort Distance, ushort Intensity)>();
-            for (int i = 0; i < 36; i += 3)
-            {
-                ushort distance = (ushort)((rawData[i + 7] << 8) | rawData[i + 6]);
-                ushort intensity = rawData[i + 8];
-                lidarPacket.Data.Add((distance, intensity)); //(mm)
-            }
-
-            lidarPacket.EndAngle = (ushort)((rawData[43] << 8) | rawData[42]);
-
-            lidarPacket.Timestamp = (ushort)((rawData[45] << 8) | rawData[44]);
-
-            lidarPacket.Crc = (rawData[46]);
-        }
-        return lidarPacket;
-    }
-
-    private void StepAnalysis(LidarPacket lidarPacket)
-    {
-        float step;
-
-        step = (lidarPacket.EndAngle - lidarPacket.StartAngle) / (11);
-
-        Console.WriteLine(step.ToString());
-
-    }
-
-    private void AppendToFile(byte[] buffer)
-    {
-        using (StreamWriter sw = File.AppendText("readedLidar.txt"))
+        using (StreamWriter sw = File.AppendText("lidarPacket.txt"))
         {
             foreach (byte b in buffer)
             {
@@ -112,5 +96,7 @@ public class LidarReader
             sw.WriteLine();
         }
     }
+
+   
 }
 
