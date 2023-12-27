@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ldrobot
 {
-    public class LidarCrc
+    public class LidarCrcCheck
     {
         private readonly byte[] CrcTable = {
         0x00, 0x4d, 0x9a, 0xd7, 0x79, 0x34, 0xe3, 0xae, 0xf2, 0xbf, 0x68, 0x25, 0x8b, 0xc6, 0x11, 0x5c,
@@ -26,15 +27,46 @@ namespace ldrobot
         0x5d, 0x10, 0xc7, 0x8a, 0x24, 0x69, 0xbe, 0xf3, 0xaf, 0xe2, 0x35, 0x78, 0xd6, 0x9b, 0x4c, 0x01,
         0xf4, 0xb9, 0x6e, 0x23, 0x8d, 0xc0, 0x17, 0x5a, 0x06, 0x4b, 0x9c, 0xd1, 0x7f, 0x32, 0xe5, 0xa8
     };
+        private int CrcCheckNum;
+        private int Check;
+        public LidarCrcCheck()
+        {
+            CrcCheckNum = 0;
+            Check = 0;
+        }
 
-        public byte CalculateCrc8(byte[] data, int len)
+        private bool CalculateCrc8(byte[] buffer, int len)
         {
             byte crc = 0;
+            bool check;
+
             for (int i = 0; i < len; i++)
             {
-                crc = CrcTable[(crc ^ data[i]) & 0xFF];
+                crc = CrcTable[(crc ^ buffer[i]) & 0xFF];
             }
-            return crc;
+            return crc  == buffer[len];
+        }
+
+        public void ValidateCrc(byte[] buffer, int len)
+        {
+            bool check = CalculateCrc8(buffer, len);
+            
+            CrcCheckNum++;
+
+            if (check)
+            {
+                Check++;
+                if (CrcCheckNum == 10 && Check == 10)
+                {
+                    //Debug.WriteLine("Data was received successfully");
+                    CrcCheckNum = 0;
+                    Check = 0;
+                }
+            }
+            else
+            {
+                Debug.WriteLine("CRC Check Failed!");
+            }
         }
     }
 }

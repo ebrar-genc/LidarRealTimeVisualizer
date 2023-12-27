@@ -12,71 +12,61 @@ using System.Reflection.PortableExecutable;
 public class LidarReader
 {
     private SerialPort serialPort;
+    private LidarPacket LidarPacket;
+    private LidarCrcCheck LidarCrcCheck;
+
     private int PacketLen;
-    private int CrcCheck;
     private int MeasuringPoint;
+    private string PortName;
+    private int BaudRate;
 
     public LidarReader(string portName, int baudRate)
     {
+        LidarPacket = new LidarPacket();
+        LidarCrcCheck = new LidarCrcCheck();
         PacketLen = 47;
-        CrcCheck = 0;
         MeasuringPoint = 12;
-        Debug.WriteLine("Initializing LIDAR");
+        PortName = portName;
+        BaudRate = baudRate;
 
+        StartSerialPort();
+        
+    }
+    
+    private void StartSerialPort()
+    {
+        Debug.WriteLine("Initializing LIDAR");
         try
         {
-            serialPort = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
+            serialPort = new SerialPort(PortName, BaudRate, Parity.None, 8, StopBits.One);
             serialPort.Open();
         }
         catch (Exception ex)
         {
             Debug.WriteLine("Error opening serial port: " + ex.Message);
         }
-
     }
-    
+
     public void StartReading()
     {
         byte[] buffer = new byte[PacketLen];
         var header = serialPort.ReadByte();
+        
 
         if (header == 0x54)
         {
-            LidarPacket lidarPacket = new LidarPacket();
             buffer[0] = 0x54;
             for (int i = 1; i < PacketLen; i++)
             {
                 buffer[i] = (byte)serialPort.ReadByte();
             }
-            lidarPacket.ParseLidarData(buffer, MeasuringPoint);
+            LidarPacket.AnalyzeLidarPacket(buffer, MeasuringPoint);
+            LidarCrcCheck.ValidateCrc(buffer, buffer.Length - 1);
             AppendToFileBuffer(buffer);
-            lidarPacket.AppendToFilePacket();
-            ValidateCrc(buffer);
-            lidarPacket.CalculateAngles(MeasuringPoint);
         }
     }
 
-    private void ValidateCrc(byte[] buffer)
-    {
-        LidarCrc lidarCrc = new LidarCrc();
 
-        byte calculatedCrc = lidarCrc.CalculateCrc8(buffer, buffer.Length - 1);
-        bool check = calculatedCrc == buffer[buffer.Length - 1];
-        CrcCheck++;
-
-        if (check)
-        {
-            if (CrcCheck == 10)
-            {
-                Debug.WriteLine("Data was received successfully");
-                CrcCheck = 0;
-            }
-        }
-        else
-        {
-            Debug.WriteLine("CRC Check Failed!");
-        }
-    }
 
     public void StopReading()
     {
@@ -84,7 +74,6 @@ public class LidarReader
     }
 
  
-
     private void AppendToFileBuffer(byte[] buffer)
     {
         using (StreamWriter sw = File.AppendText("lidarPacket.txt"))
