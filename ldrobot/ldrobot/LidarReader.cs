@@ -60,9 +60,9 @@ public class LidarReader
             {
                 buffer[i] = (byte)serialPort.ReadByte();
             }
+            AppendToFileBuffer(buffer);
             LidarPacket.AnalyzeLidarPacket(buffer, MeasuringPoint);
             LidarCrcCheck.ValidateCrc(buffer, buffer.Length - 1);
-            AppendToFileBuffer(buffer);
         }
     }
 
