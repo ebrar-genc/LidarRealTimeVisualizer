@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 
 namespace ldrobot
 {
+    /// <summary>
+    /// Represents a class for performing CRC (Cyclic Redundancy Check) validation on LIDAR data.
+    /// </summary>
     public class LidarCrcCheck
     {
         private readonly byte[] CrcTable = {
@@ -27,14 +25,26 @@ namespace ldrobot
         0x5d, 0x10, 0xc7, 0x8a, 0x24, 0x69, 0xbe, 0xf3, 0xaf, 0xe2, 0x35, 0x78, 0xd6, 0x9b, 0x4c, 0x01,
         0xf4, 0xb9, 0x6e, 0x23, 0x8d, 0xc0, 0x17, 0x5a, 0x06, 0x4b, 0x9c, 0xd1, 0x7f, 0x32, 0xe5, 0xa8
     };
-        private int CrcCheckNum;
-        private int Check;
+        
+        private int CrcPacketNum; //Holds 450 packets covering 1 data
+        private int Check; //counts the valided of each packet
+
+        /// <summary>
+        /// Initializes a new instance of the LidarCrcCheck class with default values.
+        /// </summary>
         public LidarCrcCheck()
         {
-            CrcCheckNum = 0;
+            CrcPacketNum = 0;
             Check = 0;
         }
 
+
+        /// <summary>
+        /// Calculates the CRC
+        /// </summary>
+        /// <param name="buffer">byte array is 1 packet</param>
+        /// <param name="len">len = buffer.length - 1</param>
+        /// <returns>Returns true if the calculated CRC matches the provided CRC byte; otherwise, false.</returns>
         private bool CalculateCrc8(byte[] buffer, int len)
         {
             byte crc = 0;
@@ -47,19 +57,24 @@ namespace ldrobot
             return crc  == buffer[len];
         }
 
+        /// <summary>
+        /// If all 450 packages are valid, the data is successful.
+        /// </summary>
+        /// <param name="buffer">byte array is 1 packet</param>
+        /// <param name="len">len = buffer.length - 1.</param>
         public void ValidateCrc(byte[] buffer, int len)
         {
             bool check = CalculateCrc8(buffer, len);
             
-            CrcCheckNum++;
+            CrcPacketNum++;
 
             if (check)
             {
                 Check++;
-                if (CrcCheckNum == 10 && Check == 10)
+                if (CrcPacketNum == 450 && Check == 450)
                 {
                     //Debug.WriteLine("Data was received successfully");
-                    CrcCheckNum = 0;
+                    CrcPacketNum = 0;
                     Check = 0;
                 }
             }

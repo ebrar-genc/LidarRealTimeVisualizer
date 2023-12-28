@@ -7,7 +7,8 @@ using ldrobot;
 using System.Reflection.PortableExecutable;
 
 /// <summary>
-/// Represents the data structure for LIDAR data.
+/// Represents a class for reading LIDAR data. Initializes the necessary components, opens a serial port connection,
+/// reads LIDAR data, and handles the cleanup process upon stopping the reading operation.
 /// </summary>
 public class LidarReader
 {
@@ -20,6 +21,12 @@ public class LidarReader
     private string PortName;
     private int BaudRate;
 
+    /// <summary>
+    /// Initializes the objects,
+    /// sets the parameters and starts the serial port connection.
+    /// </summary>
+    /// <param name="portName">The name of the serial port. </param>
+    /// <param name="baudRate">The baud rate for the serial port connection.</param>
     public LidarReader(string portName, int baudRate)
     {
         LidarPacket = new LidarPacket();
@@ -28,9 +35,7 @@ public class LidarReader
         MeasuringPoint = 12;
         PortName = portName;
         BaudRate = baudRate;
-
         StartSerialPort();
-        
     }
     
     private void StartSerialPort()
@@ -47,6 +52,10 @@ public class LidarReader
         }
     }
 
+    /// <summary>
+    /// Starts reading LIDAR data from the serial port. Processes the received data.
+    /// Analyzes the packet, and validates CRC (Cyclic Redundancy Check).
+    /// </summary>
     public void StartReading()
     {
         byte[] buffer = new byte[PacketLen];
@@ -66,14 +75,18 @@ public class LidarReader
         }
     }
 
-
-
+    /// <summary>
+    /// Stops the serial port connection when user presses enter key.
+    /// </summary>
     public void StopReading()
     {
         serialPort.Close();
     }
 
- 
+    /// <summary>
+    /// Appends the provided byte array to a file in hexadecimal format.
+    /// </summary>
+    /// <param name="buffer"> The byte array is the package content. </param>
     private void AppendToFileBuffer(byte[] buffer)
     {
         using (StreamWriter sw = File.AppendText("lidarPacket.txt"))
@@ -85,7 +98,5 @@ public class LidarReader
             sw.WriteLine();
         }
     }
-
-   
 }
 

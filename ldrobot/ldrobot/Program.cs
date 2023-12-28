@@ -1,6 +1,10 @@
 ﻿using System.IO.Ports;
 class Program
 {
+    /// <summary>
+    /// Main program to read LIDAR data. Initializes a LidarReader with specified parameters, starts reading LIDAR data,
+    /// and stops the reading process when the Enter key is pressed. Handles exceptions that may occur during the reading.
+    /// </summary>
     static void Main()
     {
         LidarReader lidar = new LidarReader("COM5", 230400); //get paramters
