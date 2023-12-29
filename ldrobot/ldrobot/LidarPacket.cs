@@ -5,6 +5,7 @@ using System.Reflection.PortableExecutable;
 using System.Net.Sockets;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using ldrobot;
 
 /// <summary>
 /// Represents a class for analyzing and parses the lidar data coming as a packet.
@@ -12,18 +13,23 @@ using System.Text.RegularExpressions;
 public class LidarPacket
 {
     #region Parameters
-    private byte Header; // 0x54
-    private byte VerLen;// 3 bits packet type, 5 bits measurement points
-    private ushort Speed; // degrees per second
-    private float StartAngle; //radyan!!
-    private List<(float Distance, float Intensity)> Data;// Measurement data (2 bytes distance (metre!!!), 1 byte intensity(metre!!!) per measurement point)
-    private float EndAngle;// radyan!!
-    private ushort Timestamp;// millisecond
-    private byte Crc;
 
-    private List<float> Step;
+    private AppendToFile AppendToFile;
     private int StepCheck;
     private int PacketNumber;
+
+    public List<float> Steps;
+    public List<(string Name, ushort Value)> PacketValues;
+    public List<(float Distance, float Intensity)> Data;// Measurement data (2 bytes distance (metre!!!), 1 byte intensity(metre!!!) per measurement point)
+
+    /*public byte VerLen;// 3 bits packet type, 5 bits measurement points
+    public ushort Speed; // degrees per second
+    public float StartAngle; //radyan!!
+    public float EndAngle;// radyan!!
+    public ushort Timestamp;// millisecond
+    public byte Crc;*/
+
+    
     #endregion
 
     #region Public
@@ -35,8 +41,12 @@ public class LidarPacket
         StepCheck = 0;
         PacketNumber = 0;
 
-        Data = new List<(float Distance, float Intensity)>();
-        Step = new List<float>();
+        PacketValues = new List<(string Name, ushort Value)> ();
+        Data = new List<(float Distance, float Intensity)> ();
+        Steps = new List<float> ();
+
+        AppendToFile = new AppendToFile();
+
     }
     #endregion
 
@@ -54,13 +64,13 @@ public class LidarPacket
         {
             PacketNumber++;
 
-            Header = buffer[0];
-            VerLen = buffer[1];
-            Crc = buffer[46];
-
             ParseLidarPacket(buffer, measuringPoint);
             CalStepAngle(measuringPoint);
-            AppendToFilePacket();
+
+            AppendToFile.AppendToFilePacket(PacketValues);
+            AppendToFile.AppendToFileSteps(Steps);
+            AppendToFile.AppendToFileData(Data);
+
             Clear();
         }
     }
@@ -72,46 +82,23 @@ public class LidarPacket
     /// <param name="measuringPoint"> The number of measurement points in a data.(12) </param>
     public void CalStepAngle(int measuringPoint)
     {
-        float step = (EndAngle - StartAngle) / (measuringPoint - 1);
+        float startAngle = (float)PacketValues[3].Value;
+        float endAngle = (float)PacketValues[4].Value;
+
+        float step = (endAngle - startAngle) / (measuringPoint - 1);
 
         for (int i = 0; i < measuringPoint; i++)
         {
-            float angle = StartAngle + (step * i);
-            Step.Add(angle);
-            if (i == 0 && Math.Round(angle, 5) == Math.Round(StartAngle, 5)
-                || i == (measuringPoint - 1) && Math.Round(angle, 5) == Math.Round(EndAngle, 5))
+            float angle = startAngle + (step * i);
+            Steps.Add(angle);
+            if (i == 0 && angle == startAngle
+                || i == (measuringPoint - 1) && angle == endAngle)
                 StepCheck++;
         }
         IsDataCheck();
     }
 
-    /// <summary>
-    /// Saves the header information, 12 measurement points and 12 step angles of the data in one package to the file.
-    /// </summary>
-    public void AppendToFilePacket()
-    {
-        using (StreamWriter sw = File.AppendText("lidarPacket.txt"))
-        {
-            string result = ("Header (byte): " + Header.ToString("X2") + " VerLen (byte): " + VerLen.ToString("X2") +
-                " Speed (ushort): " + Speed + "\nTimestamp(ushort): " + Timestamp + " Crc (byte): " + Crc.ToString("X2") +
-                "\nStartAngle (radyan): " + StartAngle + " EndAngle (radyan): " + EndAngle);
-
-            sw.WriteLine("*****");
-            sw.WriteLine(result);
-            sw.WriteLine("\n12 measuring point step control angles:");
-            foreach (float step in Step)
-            {
-                sw.WriteLine(step);
-            }
-            sw.WriteLine("\nLidar Data:");
-            foreach (var dataPoint in Data)
-            {
-                sw.WriteLine("  Distance: " + dataPoint.Distance + " metre, Intensity: " + dataPoint.Intensity + " metre");
-            }
-
-            sw.WriteLine();
-        }
-    }
+ 
     #endregion
 
     #region Private Functions
@@ -123,8 +110,13 @@ public class LidarPacket
     /// <param name="measuringPoint"> The number of measurement points in a data.(12) </param>
     private void ParseLidarPacket(byte[] buffer, int measuringPoint)
     {
-        Speed = (ushort)((buffer[3] << 8) | buffer[2]);
-        StartAngle = (ushort)((buffer[5] << 8) | buffer[4]) * 0.01f;
+        PacketValues.Add(("Header", buffer[0]));
+        PacketValues.Add(("VerLen", buffer[1])); // 3 bits packet type, 5 bits measurement points
+        PacketValues.Add(("Speed", (ushort)((buffer[3] << 8) | buffer[2]))); //degrees per second
+        PacketValues.Add(("StartAngle", (ushort)((buffer[5] << 8) | buffer[4])));
+        PacketValues.Add(("EndAngle", (ushort)((buffer[43] << 8) | buffer[42])));
+        PacketValues.Add(("Timestamp", (ushort)((buffer[45] << 8) | buffer[44])));
+        PacketValues.Add(("Crc", buffer[46])); // Crc 
 
         // Extract Data (2 bytes distance, 1 byte intensity per measurement point)
         for (int i = 0; i < measuringPoint * 3; i += 3)
@@ -133,9 +125,6 @@ public class LidarPacket
             float intensity = buffer[i + 8] / 1000.0f;
             Data.Add((distance, intensity));
         }
-
-        EndAngle = (ushort)((buffer[43] << 8) | buffer[42]) * 0.01f;
-        Timestamp = (ushort)((buffer[45] << 8) | buffer[44]);
     }
 
     /// <summary>
@@ -144,12 +133,13 @@ public class LidarPacket
     /// </summary>
     private void IsDataCheck()
     {
+
         if (PacketNumber == 450)
         {
             if (StepCheck == 450 * 2)
                 Console.WriteLine("Correct Data");// correctdata class(()))!!
             else
-                Debug.WriteLine("Incorrect Data!1111111111!!");
+                Console.WriteLine("Incorrect Data!1111111111!!");
         }
     }
     #endregion
@@ -160,16 +150,11 @@ public class LidarPacket
     /// </summary>
     private void Clear()
     {
-        Header = 0;
-        VerLen = 0;
-        Speed = 0;
-        StartAngle = 0;
+        PacketValues.Clear();
         Data.Clear();
-        Step.Clear();
-        EndAngle = 0;
-        Timestamp = 0;
-        Crc = 0;
-        if (PacketNumber == 10) 
+        Steps.Clear();
+        
+        if (PacketNumber == 450) 
         {
             //Console.WriteLine("10 packet was received");
             PacketNumber = 0;

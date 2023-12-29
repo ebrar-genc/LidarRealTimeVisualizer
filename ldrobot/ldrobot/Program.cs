@@ -20,7 +20,7 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine("An error occurred while trying to read lidar data" + ex.Message);
+            Console.WriteLine("An error occurred while trying to read lidar data****" + ex.Message);
         }
         finally 
         { 

@@ -15,6 +15,7 @@ public class LidarReader
     private SerialPort serialPort;
     private LidarPacket LidarPacket;
     private LidarCrcCheck LidarCrcCheck;
+    private AppendToFile AppendToFile;
 
     private int PacketLen;
     private int MeasuringPoint;
@@ -31,6 +32,8 @@ public class LidarReader
     {
         LidarPacket = new LidarPacket();
         LidarCrcCheck = new LidarCrcCheck();
+        AppendToFile = new AppendToFile();
+
         PacketLen = 47;
         MeasuringPoint = 12;
         PortName = portName;
@@ -60,7 +63,7 @@ public class LidarReader
     {
         byte[] buffer = new byte[PacketLen];
         var header = serialPort.ReadByte();
-        
+        bool crcCheck;
 
         if (header == 0x54)
         {
@@ -69,9 +72,13 @@ public class LidarReader
             {
                 buffer[i] = (byte)serialPort.ReadByte();
             }
-            AppendToFileBuffer(buffer);
-            LidarPacket.AnalyzeLidarPacket(buffer, MeasuringPoint);
-            LidarCrcCheck.ValidateCrc(buffer, buffer.Length - 1);
+            AppendToFile.AppendToFileBuffer(buffer);
+            crcCheck = LidarCrcCheck.CalculateCrc8(buffer, buffer.Length - 1);
+
+            if (crcCheck)
+                LidarPacket.AnalyzeLidarPacket(buffer, MeasuringPoint);
+            else
+                Console.WriteLine("Crc error");
         }
     }
 
@@ -83,20 +90,6 @@ public class LidarReader
         serialPort.Close();
     }
 
-    /// <summary>
-    /// Appends the provided byte array to a file in hexadecimal format.
-    /// </summary>
-    /// <param name="buffer"> The byte array is the package content. </param>
-    private void AppendToFileBuffer(byte[] buffer)
-    {
-        using (StreamWriter sw = File.AppendText("lidarPacket.txt"))
-        {
-            foreach (byte b in buffer)
-            {
-                sw.Write(b.ToString("X2") + " ");
-            }
-            sw.WriteLine();
-        }
-    }
+    
 }
 

@@ -26,16 +26,16 @@ namespace ldrobot
         0xf4, 0xb9, 0x6e, 0x23, 0x8d, 0xc0, 0x17, 0x5a, 0x06, 0x4b, 0x9c, 0xd1, 0x7f, 0x32, 0xe5, 0xa8
     };
         
-        private int CrcPacketNum; //Holds 450 packets covering 1 data
-        private int Check; //counts the valided of each packet
+       // private int CrcPacketNum; //Holds 450 packets covering 1 data
+       // private int Check; //counts the valided of each packet
 
         /// <summary>
         /// Initializes a new instance of the LidarCrcCheck class with default values.
         /// </summary>
         public LidarCrcCheck()
         {
-            CrcPacketNum = 0;
-            Check = 0;
+           // CrcPacketNum = 0;
+          //  Check = 0;
         }
 
 
@@ -45,19 +45,19 @@ namespace ldrobot
         /// <param name="buffer">byte array is 1 packet</param>
         /// <param name="len">len = buffer.length - 1</param>
         /// <returns>Returns true if the calculated CRC matches the provided CRC byte; otherwise, false.</returns>
-        private bool CalculateCrc8(byte[] buffer, int len)
+        public bool CalculateCrc8(byte[] buffer, int len)
         {
             byte crc = 0;
-            bool check;
 
             for (int i = 0; i < len; i++)
             {
                 crc = CrcTable[(crc ^ buffer[i]) & 0xFF];
             }
+
             return crc  == buffer[len];
         }
 
-        /// <summary>
+        /*/// <summary>
         /// If all 450 packages are valid, the data is successful.
         /// </summary>
         /// <param name="buffer">byte array is 1 packet</param>
@@ -73,15 +73,14 @@ namespace ldrobot
                 Check++;
                 if (CrcPacketNum == 450 && Check == 450)
                 {
-                    //Debug.WriteLine("Data was received successfully");
                     CrcPacketNum = 0;
                     Check = 0;
                 }
             }
             else
             {
-                Debug.WriteLine("CRC Check Failed!");
+                Console.WriteLine("CRC Check Failed!");
             }
-        }
+        }*/
     }
 }
