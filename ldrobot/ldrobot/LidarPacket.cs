@@ -1,10 +1,4 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
-
-using System.Diagnostics.Metrics;
-using System.Reflection.PortableExecutable;
-using System.Net.Sockets;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
 using ldrobot;
 
 /// <summary>
@@ -15,6 +9,10 @@ public class LidarPacket
     #region Parameters
 
     private AppendToFile AppendToFile;
+    private LidarCrcCheck LidarCrcCheck;
+
+    //The number of measurement points in a data
+    private int MeasuringPoint;
     private int StepCheck;
     private int PacketNumber;
 
@@ -38,14 +36,17 @@ public class LidarPacket
     /// </summary>
     public LidarPacket()
     {
+
+        AppendToFile = new AppendToFile();
+        LidarCrcCheck = new LidarCrcCheck();
+
+        MeasuringPoint = 12;
         StepCheck = 0;
         PacketNumber = 0;
 
         PacketValues = new List<(string Name, ushort Value)> ();
         Data = new List<(float Distance, float Intensity)> ();
         Steps = new List<float> ();
-
-        AppendToFile = new AppendToFile();
 
     }
     #endregion
@@ -57,21 +58,27 @@ public class LidarPacket
     /// performs data checks, and appends packet details to a file.
     /// </summary>
     /// <param name="buffer">The LIDAR packet.</param>
-    /// <param name="measuringPoint">The number of measurement points in a data.(12) </param>
-    public void AnalyzeLidarPacket(byte[] buffer, int measuringPoint)
+    public void AnalyzeLidarPacket(byte[] buffer)
     {
+        bool crcCheck;
+
         if (buffer != null && buffer.Length == 47)
         {
             PacketNumber++;
 
-            ParseLidarPacket(buffer, measuringPoint);
-            CalStepAngle(measuringPoint);
+            crcCheck = LidarCrcCheck.CalculateCrc8(buffer, buffer.Length - 1);
 
-            AppendToFile.AppendToFilePacket(PacketValues);
-            AppendToFile.AppendToFileSteps(Steps);
-            AppendToFile.AppendToFileData(Data);
-
-            Clear();
+            if (crcCheck)
+            {
+                ParseLidarPacket(buffer);
+                CalStepAngle();
+                AppendToFile.AppendToFilePacket(PacketValues);
+                AppendToFile.AppendToFileSteps(Steps);
+                AppendToFile.AppendToFileData(Data);
+                Clear();
+            }
+            else
+                Console.WriteLine("Wrong Packet! Crc error!!");
         }
     }
 
@@ -80,19 +87,19 @@ public class LidarPacket
     /// If the angles match, the packet was transmitted correctly.
     /// </summary>
     /// <param name="measuringPoint"> The number of measurement points in a data.(12) </param>
-    public void CalStepAngle(int measuringPoint)
+    public void CalStepAngle()
     {
         float startAngle = (float)PacketValues[3].Value;
         float endAngle = (float)PacketValues[4].Value;
 
-        float step = (endAngle - startAngle) / (measuringPoint - 1);
+        float step = (endAngle - startAngle) / (MeasuringPoint - 1);
 
-        for (int i = 0; i < measuringPoint; i++)
+        for (int i = 0; i < MeasuringPoint; i++)
         {
             float angle = startAngle + (step * i);
             Steps.Add(angle);
             if (i == 0 && angle == startAngle
-                || i == (measuringPoint - 1) && angle == endAngle)
+                || i == (MeasuringPoint - 1) && angle == endAngle)
                 StepCheck++;
         }
         IsDataCheck();
@@ -107,8 +114,7 @@ public class LidarPacket
     /// It is parsed in accordance with the package format.
     /// </summary>
     /// <param name="buffer"> 1 packet byte array </param>
-    /// <param name="measuringPoint"> The number of measurement points in a data.(12) </param>
-    private void ParseLidarPacket(byte[] buffer, int measuringPoint)
+    private void ParseLidarPacket(byte[] buffer)
     {
         PacketValues.Add(("Header", buffer[0]));
         PacketValues.Add(("VerLen", buffer[1])); // 3 bits packet type, 5 bits measurement points
@@ -119,7 +125,7 @@ public class LidarPacket
         PacketValues.Add(("Crc", buffer[46])); // Crc 
 
         // Extract Data (2 bytes distance, 1 byte intensity per measurement point)
-        for (int i = 0; i < measuringPoint * 3; i += 3)
+        for (int i = 0; i < MeasuringPoint * 3; i += 3)
         {
             float distance = (ushort)((buffer[i + 7] << 8) | buffer[i + 6]) / 1000.0f;
             float intensity = buffer[i + 8] / 1000.0f;
@@ -137,9 +143,9 @@ public class LidarPacket
         if (PacketNumber == 450)
         {
             if (StepCheck == 450 * 2)
-                Console.WriteLine("Correct Data");// correctdata class(()))!!
+                Debug.WriteLine("Correct Data");// correctdata class(()))!!
             else
-                Console.WriteLine("Incorrect Data!1111111111!!");
+                Debug.WriteLine("Incorrect Data!!! 450 packages were received. The number of matching steps should have been 900, but: " + StepCheck);
         }
     }
     #endregion

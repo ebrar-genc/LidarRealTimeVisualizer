@@ -1,5 +1,4 @@
-﻿using System.IO.Ports;
-class Program
+﻿class Program
 {
     /// <summary>
     /// Main program to read LIDAR data. Initializes a LidarReader with specified parameters, starts reading LIDAR data,

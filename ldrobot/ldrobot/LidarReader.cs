@@ -1,10 +1,6 @@
 ﻿using System.IO.Ports;
-using System;
 using System.Diagnostics;
-using System.Net.Sockets;
-using System.ComponentModel.DataAnnotations;
 using ldrobot;
-using System.Reflection.PortableExecutable;
 
 /// <summary>
 /// Represents a class for reading LIDAR data. Initializes the necessary components, opens a serial port connection,
@@ -14,11 +10,9 @@ public class LidarReader
 {
     private SerialPort serialPort;
     private LidarPacket LidarPacket;
-    private LidarCrcCheck LidarCrcCheck;
     private AppendToFile AppendToFile;
 
     private int PacketLen;
-    private int MeasuringPoint;
     private string PortName;
     private int BaudRate;
 
@@ -31,11 +25,9 @@ public class LidarReader
     public LidarReader(string portName, int baudRate)
     {
         LidarPacket = new LidarPacket();
-        LidarCrcCheck = new LidarCrcCheck();
         AppendToFile = new AppendToFile();
 
         PacketLen = 47;
-        MeasuringPoint = 12;
         PortName = portName;
         BaudRate = baudRate;
         StartSerialPort();
@@ -63,7 +55,6 @@ public class LidarReader
     {
         byte[] buffer = new byte[PacketLen];
         var header = serialPort.ReadByte();
-        bool crcCheck;
 
         if (header == 0x54)
         {
@@ -73,12 +64,8 @@ public class LidarReader
                 buffer[i] = (byte)serialPort.ReadByte();
             }
             AppendToFile.AppendToFileBuffer(buffer);
-            crcCheck = LidarCrcCheck.CalculateCrc8(buffer, buffer.Length - 1);
+            LidarPacket.AnalyzeLidarPacket(buffer);
 
-            if (crcCheck)
-                LidarPacket.AnalyzeLidarPacket(buffer, MeasuringPoint);
-            else
-                Console.WriteLine("Crc error");
         }
     }
 

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-
+﻿
 namespace ldrobot
 {
     /// <summary>
@@ -25,17 +24,12 @@ namespace ldrobot
         0x5d, 0x10, 0xc7, 0x8a, 0x24, 0x69, 0xbe, 0xf3, 0xaf, 0xe2, 0x35, 0x78, 0xd6, 0x9b, 0x4c, 0x01,
         0xf4, 0xb9, 0x6e, 0x23, 0x8d, 0xc0, 0x17, 0x5a, 0x06, 0x4b, 0x9c, 0xd1, 0x7f, 0x32, 0xe5, 0xa8
     };
-        
-       // private int CrcPacketNum; //Holds 450 packets covering 1 data
-       // private int Check; //counts the valided of each packet
-
+       
         /// <summary>
-        /// Initializes a new instance of the LidarCrcCheck class with default values.
+        /// Initializes a new instance of the LidarCrcCheck class
         /// </summary>
         public LidarCrcCheck()
         {
-           // CrcPacketNum = 0;
-          //  Check = 0;
         }
 
 
@@ -57,30 +51,5 @@ namespace ldrobot
             return crc  == buffer[len];
         }
 
-        /*/// <summary>
-        /// If all 450 packages are valid, the data is successful.
-        /// </summary>
-        /// <param name="buffer">byte array is 1 packet</param>
-        /// <param name="len">len = buffer.length - 1.</param>
-        public void ValidateCrc(byte[] buffer, int len)
-        {
-            bool check = CalculateCrc8(buffer, len);
-            
-            CrcPacketNum++;
-
-            if (check)
-            {
-                Check++;
-                if (CrcPacketNum == 450 && Check == 450)
-                {
-                    CrcPacketNum = 0;
-                    Check = 0;
-                }
-            }
-            else
-            {
-                Console.WriteLine("CRC Check Failed!");
-            }
-        }*/
     }
 }
