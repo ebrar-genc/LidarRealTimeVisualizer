@@ -14,7 +14,10 @@ namespace ldrobot
         /// <summary>
         /// file name where information will be saved
         /// </summary>
-        private string FileName;
+        private string LidarInfoFileName;
+        private string LidarDataFileName;
+
+        private int I;
         #endregion
 
         #region Public
@@ -23,7 +26,10 @@ namespace ldrobot
         /// </summary>
         public AppendToFile()
         {
-            FileName = "lidarInfo.txt";
+            LidarInfoFileName = "lidarInfo.txt";
+            LidarDataFileName = "correctData.txt";
+
+            I = 1;
         }
 
         /// <summary>
@@ -32,7 +38,7 @@ namespace ldrobot
         /// <param name="packetValues">The list of header values to be appended.</param>
         public void AppendToFilePacket(List<(string name, ushort value)> packetValues)
         {
-            using (StreamWriter sw = File.AppendText(FileName))
+            using (StreamWriter sw = File.AppendText(LidarInfoFileName))
             {
 
                 foreach (var packet in packetValues)
@@ -47,37 +53,18 @@ namespace ldrobot
         /// Appends the 12 step angles of a LIDAR packet to the file.
         /// </summary>
         /// <param name="steps">The list of step angles to be appended.</param>
-        public void AppendToFileSteps(List<float> steps)
+        public void AppendToFileInfo(double[] angles, double[] distance, double[] intensity)
         {
             int i = 1;
 
-            using (StreamWriter sw = File.AppendText(FileName))
+            using (StreamWriter sw = File.AppendText(LidarInfoFileName))
             {
-                sw.WriteLine("\nStep angles:");
-                foreach (var step in steps)
+                for (int j = 0; j < angles.Length; j++)
                 {
-                    sw.WriteLine("  " + i + ". step is: " + step);
+                    sw.WriteLine($"  {i}. Angle: {angles[j]}, Distance: {distance[j]}, Intensity: {intensity[j]}");
                     i++;
                 }
             }
-        }
-
-        /// <summary>
-        /// Appends the 12 data points of a LIDAR packet to the file.
-        /// </summary>
-        /// <param name="data">The list of data points to be appended.</param>
-        public void AppendToFileData(List<(float distance, float intensity)> data)
-        {
-            using (StreamWriter sw = File.AppendText(FileName))
-            {
-                sw.WriteLine("Lidar Data:");
-                foreach (var dataPoint in data)
-                {
-                    sw.WriteLine("  Distance: " + dataPoint.distance + " metre, Intensity: " + dataPoint.intensity + " metre");
-                }
-                sw.WriteLine("\n\n");
-            }
-            
         }
 
         /// <summary>
@@ -86,13 +73,26 @@ namespace ldrobot
         /// <param name="buffer">The byte array representing package content.</param>
         public void AppendToFileBuffer(byte[] buffer)
         {
-            using (StreamWriter sw = File.AppendText(FileName))
+            using (StreamWriter sw = File.AppendText(LidarInfoFileName))
             {
                 foreach (byte b in buffer)
                 {
                     sw.Write(b.ToString("X2") + " ");
                 }
                 sw.WriteLine();
+            }
+        }
+
+        public void AppendCorrectData(double[] angles, double[] distance, double[] intensity)
+        {
+            using (StreamWriter sw = new StreamWriter(LidarDataFileName, true))
+            {
+                for (int j = 0; j < angles.Length; j++)
+                {
+                    sw.WriteLine($"  {I}. Angle: {angles[j]}, Distance: {distance[j]}, Intensity: {intensity[j]}");
+                    I++;
+                }
+
             }
         }
         #endregion
