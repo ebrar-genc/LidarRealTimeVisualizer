@@ -6,31 +6,73 @@ namespace ldrobot
 {
     class LidarData
     {
-        public List<float>[] Steps;
+        #region Parameters
+        /// <summary>
+        /// List of angles
+        /// </summary>
+        public List<float>[] Angles;
+
+        /// <summary>
+        /// distance and intensity information of the data
+        /// </summary>
         public List<(float Distance, float Intensity)>[] Data;
 
+        /// <summary>
+        /// transmitted packet number.
+        /// </summary>
         private int Packet;
+        #endregion
+
+        #region Public
+        /// <summary>
+        /// Initializes a new instance of the LidarData class.
+        /// </summary>
         public LidarData()
         {
-            Steps = new List<float>[450];
+            Angles = new List<float>[450];
             Data = new List<(float Distance, float Intensity)>[450];
 
             Packet = 0;
         }
+        #endregion
 
-
-        public void AddLists(List<float> steps, List<(float distance, float intensity)> data)
+        #region Private
+        /// <summary>
+        /// Clears the data arrays and resets the packet index.
+        /// </summary>
+        private void Clear()
         {
-            if (Steps[Packet] == null)
+            for (int i = 0; i < 450; i++)
             {
-                Steps[Packet] = new List<float>();
+                Angles[i] = null;
+                Data[i] = null;
+            }
+
+            Angles = new List<float>[450];
+            Data = new List<(float Distance, float Intensity)>[450];
+            Packet = 0;
+
+        }
+        #endregion
+
+        #region Public Functions
+        /// <summary>
+        /// Adds the provided lists of step angles and measurement points to the data arrays.
+        /// </summary>
+        /// <param name="Angles">List of step angles.</param>
+        /// <param name="data">List of measurement points.</param>
+        public void AddLists(List<float> angles, List<(float distance, float intensity)> data)
+        {
+            if (Angles[Packet] == null)
+            {
+                Angles[Packet] = new List<float>();
             }
 
             if (Data[Packet] == null)
             {
                 Data[Packet] = new List<(float Distance, float Intensity)>();
             }
-            Steps[Packet].AddRange(steps);
+            Angles[Packet].AddRange(angles);
             Data[Packet].AddRange(data);
 
             Packet++;
@@ -57,20 +99,7 @@ namespace ldrobot
 
             }
         }
-
-        private void Clear()
-        {
-            for (int i = 0; i < 450; i++)
-            {
-                Steps[i] = null;
-                Data[i] = null;
-            }
-
-            Steps = new List<float>[450];
-            Data = new List<(float Distance, float Intensity)>[450];
-            Packet = 0;
-
-        }
-
+        #endregion
+        
     }
 }

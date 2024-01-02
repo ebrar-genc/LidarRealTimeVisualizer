@@ -8,14 +8,40 @@ using ldrobot;
 /// </summary>
 public class LidarReader
 {
+    #region Parameters
+
+    /// <summary>
+    /// The instance for communication with the LIDAR device.
+    /// </summary>
     private SerialPort serialPort;
+
+    /// <summary>
+    /// The instance for analyzing and parsing LIDAR data packets.
+    /// </summary>
     private LidarPacket LidarPacket;
+
+    /// <summary>
+    /// The instance for handling file appending operations.
+    /// </summary>
     private AppendToFile AppendToFile;
 
+    /// <summary>
+    /// The length of the LIDAR data packet in bytes.
+    /// </summary>
     private int PacketLen;
-    private string PortName;
-    private int BaudRate;
 
+    /// <summary>
+    /// The name of the serial port to establish a connection with the LIDAR device.
+    /// </summary>
+    private string PortName;
+
+    /// <summary>
+    /// The baud rate for the serial port connection with the LIDAR device.
+    /// </summary>
+    private int BaudRate;
+    #endregion
+
+    #region Public
     /// <summary>
     /// Initializes the objects,
     /// sets the parameters and starts the serial port connection.
@@ -31,20 +57,6 @@ public class LidarReader
         PortName = portName;
         BaudRate = baudRate;
         StartSerialPort();
-    }
-    
-    private void StartSerialPort()
-    {
-        Debug.WriteLine("Initializing LIDAR");
-        try
-        {
-            serialPort = new SerialPort(PortName, BaudRate, Parity.None, 8, StopBits.One);
-            serialPort.Open();
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine("Error opening serial port: " + ex.Message);
-        }
     }
 
     /// <summary>
@@ -65,7 +77,6 @@ public class LidarReader
             }
             AppendToFile.AppendToFileBuffer(buffer);
             LidarPacket.AnalyzeLidarPacket(buffer);
-
         }
     }
 
@@ -76,7 +87,26 @@ public class LidarReader
     {
         serialPort.Close();
     }
+    #endregion
 
-    
+    #region Private
+
+    /// <summary>
+    /// Starts the serial port connection with specified parameters.
+    /// </summary>
+    private void StartSerialPort()
+    {
+        Debug.WriteLine("Initializing LIDAR");
+        try
+        {
+            serialPort = new SerialPort(PortName, BaudRate, Parity.None, 8, StopBits.One);
+            serialPort.Open();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("Error opening serial port: " + ex.Message);
+        }
+    }
+    #endregion
 }
 

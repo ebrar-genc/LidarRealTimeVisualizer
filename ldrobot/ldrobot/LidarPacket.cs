@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using ldrobot;
 
 /// <summary>
@@ -7,14 +8,40 @@ using ldrobot;
 public class LidarPacket
 {
     #region Parameters
-
+    /// <summary>
+    /// Class for writing lidar information to txt
+    /// </summary>
     private AppendToFile AppendToFile;
+    /// <summary>
+    /// crc check for accuracy of transmitted packet
+    /// </summary>
     private LidarCrcCheck LidarCrcCheck;
+    /// <summary>
+    /// Lidar data class for 450 accurate lidar packages
+    /// </summary>
     private LidarData LidarData;
+    /// <summary>
+    /// time taken for each 450 packages
+    /// </summary>
+    private Stopwatch StopWatch;
 
-    //The number of measurement points in a data
+    /// <summary>
+    /// Number of measuring points in 1 package
+    /// </summary>
     private int MeasuringPoint;
+    /// <summary>
+    /// Checking for star and end angle values ​​of 1 package
+    /// </summary>
     private int StepCheck;
+
+    /// <summary>
+    /// A boolean value indicating whether the CRC is successful.
+    /// </summary>
+    private bool CrcCheck;
+
+    /// <summary>
+    /// Number of packets transmitted
+    /// </summary>
     private int PacketNumber;
 
     public List<float> Steps;
@@ -29,24 +56,43 @@ public class LidarPacket
     /// </summary>
     public LidarPacket()
     {
-
         AppendToFile = new AppendToFile();
         LidarCrcCheck = new LidarCrcCheck();
         LidarData = new LidarData();
+        StopWatch = new Stopwatch();
 
         MeasuringPoint = 12;
         StepCheck = 0;
         PacketNumber = 0;
+        CrcCheck = true;
+
+        StopWatch.Start();
 
         PacketValues = new List<(string Name, ushort Value)> ();
         Data = new List<(float Distance, float Intensity)> ();
         Steps = new List<float> ();
+    }
+    #endregion
 
+    #region Private
+    /// <summary>
+    /// Clears the internal state of the LidarPacket instance, preparing it for the next packet processing.
+    /// </summary>
+    private void Clear()
+    {
+        PacketValues.Clear();
+        Data.Clear();
+        Steps.Clear();
+
+        if (PacketNumber == 450)
+        {
+            PacketNumber = 0;
+            StepCheck = 0;
+        }
     }
     #endregion
 
     #region Public Functions
-
     /// <summary>
     /// Analyzes the provided LIDAR packet, extracts information, calculates step angles,
     /// performs data checks, and appends packet details to a file.
@@ -54,33 +100,26 @@ public class LidarPacket
     /// <param name="buffer">The LIDAR packet.</param>
     public void AnalyzeLidarPacket(byte[] buffer)
     {
-        bool crcCheck;
+        PacketNumber++;
+        CrcCheck = LidarCrcCheck.CalculateCrc8(buffer, buffer.Length - 1);
 
-        if (buffer != null && buffer.Length == 47)
+        if (CrcCheck)
         {
-            PacketNumber++;
+            ParseLidarPacket(buffer);
+            CalStepAngle();
+            LidarData.AddLists(Steps, Data);
 
-            crcCheck = LidarCrcCheck.CalculateCrc8(buffer, buffer.Length - 1);
-
-            if (crcCheck)
-            {
-                ParseLidarPacket(buffer);
-                CalStepAngle();
-                AppendToFile.AppendToFilePacket(PacketValues);
-                AppendToFile.AppendToFileSteps(Steps);
-                AppendToFile.AppendToFileData(Data);
-                if (PacketNumber == 450)
-                {
-                    IsLidarData();
-                }
-                LidarData.AddLists(Steps, Data);
-
-            }
-            else
-                Console.WriteLine("Wrong Packet! Crc error!!");
-            Clear();
-
+            AppendToFile.AppendToFilePacket(PacketValues);
+            AppendToFile.AppendToFileSteps(Steps);
+            AppendToFile.AppendToFileData(Data);
         }
+        else
+            Debug.WriteLine("CRC error!");
+        if (PacketNumber == 450)
+        {
+            IsLidarData();
+        }
+        Clear();
     }
 
     /// <summary>
@@ -103,14 +142,10 @@ public class LidarPacket
                 || i == (MeasuringPoint - 1) && angle == endAngle)
                 StepCheck++;
         }
-        
     }
-
- 
     #endregion
 
     #region Private Functions
-
     /// <summary>
     /// It is parsed in accordance with the package format.
     /// </summary>
@@ -133,46 +168,17 @@ public class LidarPacket
             Data.Add((distance, intensity));
         }
     }
-
-
-
-    /// <summary>
-    /// 450 packages are needed to obtain 1 piece of data correctly.
-    /// If 1 packet was transmitted correctly, StepCheck is increased by 2
-    /// </summary>
-    private bool IsLidarData()
+    private void IsLidarData()
     {
-        bool isCorrect;
-
         if (StepCheck == 450 * 2)
         {
             Debug.WriteLine("Correct Data");
-            isCorrect = true;
+            Console.WriteLine("Seconds of delivery of 450 packages: " + StopWatch.Elapsed.TotalSeconds);
+            StopWatch.Restart();
         }
         else
         {
             Debug.WriteLine("Incorrect Data!!! 450 packages were received. The number of matching steps should have been 900, but: " + StepCheck);
-            isCorrect = false;
-        }
-
-        return isCorrect;
-    }
-    #endregion
-
-    #region Private
-    /// <summary>
-    /// Clears the internal state of the LidarPacket instance, preparing it for the next packet processing.
-    /// </summary>
-    private void Clear()
-    {
-        PacketValues.Clear();
-        Data.Clear();
-        Steps.Clear();
-
-        if (PacketNumber == 450)
-        {
-            PacketNumber = 0;
-            StepCheck = 0;
         }
     }
     #endregion

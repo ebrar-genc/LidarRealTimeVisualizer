@@ -1,17 +1,35 @@
 ﻿
+using Microsoft.VisualBasic;
+using System.Xml.Linq;
+
 namespace ldrobot
 {
+    /// <summary>
+    /// Represents a class for appending LIDAR information to a file.
+    /// </summary>
     class AppendToFile
     {
-        private string FileName;
+        #region Parameter
 
+        /// <summary>
+        /// file name where information will be saved
+        /// </summary>
+        private string FileName;
+        #endregion
+
+        #region Public
+        /// <summary>
+        /// Initializes a new instance of the AppendToFile class.
+        /// </summary>
         public AppendToFile()
         {
             FileName = "lidarInfo.txt";
         }
+
         /// <summary>
-        /// Saves the header information in one package to the file
+        /// Appends the header information of a LIDAR packet to the file.
         /// </summary>
+        /// <param name="packetValues">The list of header values to be appended.</param>
         public void AppendToFilePacket(List<(string name, ushort value)> packetValues)
         {
             using (StreamWriter sw = File.AppendText(FileName))
@@ -26,8 +44,9 @@ namespace ldrobot
         }
 
         /// <summary>
-        /// Saves the 12 step angles in one package to the file.
+        /// Appends the 12 step angles of a LIDAR packet to the file.
         /// </summary>
+        /// <param name="steps">The list of step angles to be appended.</param>
         public void AppendToFileSteps(List<float> steps)
         {
             int i = 1;
@@ -44,8 +63,9 @@ namespace ldrobot
         }
 
         /// <summary>
-        /// Saves the 12 data points in one package to the file.
+        /// Appends the 12 data points of a LIDAR packet to the file.
         /// </summary>
+        /// <param name="data">The list of data points to be appended.</param>
         public void AppendToFileData(List<(float distance, float intensity)> data)
         {
             using (StreamWriter sw = File.AppendText(FileName))
@@ -59,11 +79,11 @@ namespace ldrobot
             }
             
         }
-    
+
         /// <summary>
         /// Appends the provided byte array to a file in hexadecimal format.
         /// </summary>
-        /// <param name="buffer"> The byte array is the package content. </param>
+        /// <param name="buffer">The byte array representing package content.</param>
         public void AppendToFileBuffer(byte[] buffer)
         {
             using (StreamWriter sw = File.AppendText(FileName))
@@ -75,5 +95,6 @@ namespace ldrobot
                 sw.WriteLine();
             }
         }
+        #endregion
     }
 }
