@@ -21,11 +21,6 @@ public class LidarReader
     private LidarPacket LidarPacket;
 
     /// <summary>
-    /// The instance for handling file appending operations.
-    /// </summary>
-    private AppendToFile AppendToFile;
-
-    /// <summary>
     /// The length of the LIDAR data packet in bytes.
     /// </summary>
     private int PacketLen;
@@ -51,7 +46,6 @@ public class LidarReader
     public LidarReader(string portName, int baudRate)
     {
         LidarPacket = new LidarPacket();
-        AppendToFile = new AppendToFile();
 
         PacketLen = 47;
         PortName = portName;
@@ -75,7 +69,6 @@ public class LidarReader
             {
                 buffer[i] = (byte)serialPort.ReadByte();
             }
-            AppendToFile.AppendToFileBuffer(buffer);
             LidarPacket.AnalyzeLidarPacket(buffer);
         }
     }

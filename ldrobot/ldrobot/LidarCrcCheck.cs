@@ -1,4 +1,6 @@
 ﻿
+using System.Diagnostics;
+
 namespace ldrobot
 {
     /// <summary>
@@ -54,7 +56,13 @@ namespace ldrobot
                 crc = CrcTable[(crc ^ buffer[i]) & 0xFF];
             }
 
-            return crc  == buffer[len];
+            if (crc == buffer[len])
+                return true;
+            else
+            {
+                Debug.WriteLine("Invalid Crc Value");
+                return false;
+            }
         }
         #endregion
 

@@ -1,6 +1,7 @@
 ﻿
 using Microsoft.VisualBasic;
 using System.Xml.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ldrobot
 {
@@ -12,12 +13,22 @@ namespace ldrobot
         #region Parameter
 
         /// <summary>
-        /// file name where information will be saved
+        /// The file in which lidar information will be saved
         /// </summary>
         private string LidarInfoFileName;
-        private string LidarDataFileName;
+        /// <summary>
+        /// file where correct lidar information is saved
+        /// </summary>
+        private string LidarCoorrectDataFileName;
+        /// <summary>
+        /// number of info data transmitted
+        /// </summary>
+        private int InfoNum;
+        /// <summary>
+        /// number of correct data transmitted
+        /// </summary>
+        private int CorrectNum;
 
-        private int I;
         #endregion
 
         #region Public
@@ -27,73 +38,63 @@ namespace ldrobot
         public AppendToFile()
         {
             LidarInfoFileName = "lidarInfo.txt";
-            LidarDataFileName = "correctData.txt";
+            LidarCoorrectDataFileName = "correctData.txt";
 
-            I = 1;
+            InfoNum = 1;
+            CorrectNum = 1;
+
+            if (File.Exists(LidarInfoFileName))
+                File.Delete(LidarInfoFileName);
+            if (File.Exists(LidarCoorrectDataFileName))
+                File.Delete(LidarCoorrectDataFileName);
         }
 
         /// <summary>
-        /// Appends the header information of a LIDAR packet to the file.
+        /// Appends Lidar packet information.
         /// </summary>
-        /// <param name="packetValues">The list of header values to be appended.</param>
-        public void AppendToFilePacket(List<(string name, ushort value)> packetValues)
+        /// <param name="packetValues">List of packet values, each representing Lidar packet details.</param>
+        /// <param name="buffer">Array of byte arrays representing the packet header byte content for each Lidar packet.</param>
+        public void AppendPackets(List<List<(string name, ushort value)>> packetValues, byte[][] buffer)
         {
             using (StreamWriter sw = File.AppendText(LidarInfoFileName))
             {
-
-                foreach (var packet in packetValues)
+                sw.WriteLine("****** " + InfoNum + ". Data******");
+                for (int i = 0; i < buffer.Length; i++)
                 {
-                    string line = (" - " + packet.name + ": " + packet.value + " - ");
-                    sw.Write(line);
+                    sw.WriteLine((i + 1) + ". Packet\nBuffer: " + BitConverter.ToString(buffer[i]));
+
+                    sw.WriteLine("PacketValues:");
+                    foreach (var packet in packetValues[i])
+                    {
+                        sw.WriteLine(" - " + packet.name + ":" + packet.value);
+                    }
                 }
+                sw.WriteLine("\n\n");
+                InfoNum++;
             }
         }
 
         /// <summary>
-        /// Appends the 12 step angles of a LIDAR packet to the file.
+        /// Appends correct Lidar information
         /// </summary>
-        /// <param name="steps">The list of step angles to be appended.</param>
-        public void AppendToFileInfo(double[] angles, double[] distance, double[] intensity)
+        /// <param name="angles"> Each Lidar measurement points angles.</param>
+        /// <param name="distance">Array of distances for each Lidar measurement point.</param>
+        /// <param name="intensity">Array of intensities for each Lidar measurement point.</param>
+        public void AppendCorrectDatas(double[] angles, double[] distance, double[] intensity)
         {
             int i = 1;
 
-            using (StreamWriter sw = File.AppendText(LidarInfoFileName))
+            using (StreamWriter sw = File.AppendText(LidarCoorrectDataFileName))
             {
+                sw.WriteLine("****** " + CorrectNum + ". Data******");
                 for (int j = 0; j < angles.Length; j++)
                 {
-                    sw.WriteLine($"  {i}. Angle: {angles[j]}, Distance: {distance[j]}, Intensity: {intensity[j]}");
+                    sw.WriteLine(i + ". Angle: " + angles[j] + ",       Distance: " + distance[j] + ",       Intensity: " + intensity[j]);
                     i++;
                 }
+                sw.WriteLine("\n\n");
             }
-        }
-
-        /// <summary>
-        /// Appends the provided byte array to a file in hexadecimal format.
-        /// </summary>
-        /// <param name="buffer">The byte array representing package content.</param>
-        public void AppendToFileBuffer(byte[] buffer)
-        {
-            using (StreamWriter sw = File.AppendText(LidarInfoFileName))
-            {
-                foreach (byte b in buffer)
-                {
-                    sw.Write(b.ToString("X2") + " ");
-                }
-                sw.WriteLine();
-            }
-        }
-
-        public void AppendCorrectData(double[] angles, double[] distance, double[] intensity)
-        {
-            using (StreamWriter sw = new StreamWriter(LidarDataFileName, true))
-            {
-                for (int j = 0; j < angles.Length; j++)
-                {
-                    sw.WriteLine($"  {I}. Angle: {angles[j]}, Distance: {distance[j]}, Intensity: {intensity[j]}");
-                    I++;
-                }
-
-            }
+            CorrectNum++;
         }
         #endregion
     }

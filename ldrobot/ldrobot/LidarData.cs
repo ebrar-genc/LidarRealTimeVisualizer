@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -9,24 +10,31 @@ namespace ldrobot
     class LidarData
     {
         #region Parameters
-
+        /// <summary>
+        /// object to write information to txt file
+        /// </summary>
         private AppendToFile AppendToFile;
 
         /// <summary>
-        /// List of angles
+        /// Array of angles. radians.
         /// </summary>
-        private double[] Angles;
-
+        public double[] Angles;
         /// <summary>
-        /// distance and intensity information of the data
+        /// distance information of the lidar data
         /// </summary>
-        private double[] Distance;
-        private double[] Intensity;
-
+        public double[] Distance;
         /// <summary>
-        /// transmitted packet number.
+        /// intensity information of the lidar data
         /// </summary>
-        private int Packet;
+        public double[] Intensity;
+        /// <summary>
+        /// Number of packets required for 1 data
+        /// </summary>
+        private int PacketNum;
+        /// <summary>
+        /// Number of measuring points in 1 package
+        /// </summary>
+        private int MeasuringPoint;
         #endregion
 
         #region Public
@@ -35,52 +43,34 @@ namespace ldrobot
         /// </summary>
         public LidarData()
         {
-            Angles = new double[450 * 12];
-            Distance = new double[450 * 12];
-            Intensity = new double[450 * 12];
+            PacketNum = 38;
+            MeasuringPoint = 12;
+
+            Angles = new double[MeasuringPoint * PacketNum];
+            Distance = new double[MeasuringPoint * PacketNum];
+            Intensity = new double[MeasuringPoint * PacketNum];
 
             AppendToFile = new AppendToFile();
 
 
-            Packet = 0;
         }
         #endregion
 
         #region Private
-        /// <summary>
-        /// Clears the data arrays and resets the packet index.
-        /// </summary>
+
         private void Clear()
         {
-            Packet = 0;
 
         }
         #endregion
 
         #region Public Functions
         /// <summary>
-        /// Adds the provided lists of step angles and measurement points to the data arrays.
+        /// Sends lidar data to write to file
         /// </summary>
-        /// <param name="Angles">List of step angles.</param>
-        /// <param name="data">List of measurement points.</param>
-        public void AddArray(double[] angles, double[] distance, double[] intensity)
-        { 
-            Angles = angles.Concat(Angles).ToArray();
-            Distance = distance.Concat(Distance).ToArray();
-            Intensity = intensity.Concat(Intensity).ToArray();
-
-            Packet++;
-
-            if (Packet == 1)
-            {
-
-                Debug.WriteLine(string.Join(", ", Angles));
-
-                AppendToFile.AppendCorrectData(angles, distance, intensity);
-                Clear();
-
-            }
-            
+         public void SendData()
+        {
+            AppendToFile.AppendCorrectDatas(Angles, Distance, Intensity);
         }
         #endregion
         
