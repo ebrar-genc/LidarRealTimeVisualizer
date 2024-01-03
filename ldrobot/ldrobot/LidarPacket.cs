@@ -101,13 +101,12 @@ public class LidarPacket
     {
         PacketNumber++;
 
-        CrcCheck = LidarCrcCheck.CalculateCrc8(buffer, buffer.Length - 1);
-        ParseLidarPacket(buffer);
-        StepCheck = CalStepAngle();
 
-        if (!CrcCheck || !StepCheck)
+        if (CrcCheck && StepCheck)
         {
-            PacketNumber = 37;
+            CrcCheck = LidarCrcCheck.CalculateCrc8(buffer, buffer.Length - 1);
+            ParseLidarPacket(buffer);
+            StepCheck = CalStepAngle();
         }
 
         if (PacketNumber == 37)
@@ -117,37 +116,6 @@ public class LidarPacket
             StopWatch.Restart();
         }
 
-    }
-
-    /// <summary>
-    /// The Start angle of each package is increased by 12 steps to determine the final angle.
-    /// If the angles match, the packet was transmitted correctly.
-    /// </summary>
-    /// <param name="measuringPoint"> The number of measurement points in a data.(12) </param>
-    public bool CalStepAngle()
-    {
-        int stepNum;
-        double startAngle = (double)PacketValues[PacketNumber][3].Value;
-        double endAngle = (double)PacketValues[PacketNumber][4].Value;
-
-        stepNum = 0;
-        double step = (endAngle - startAngle) / (MeasuringPoint - 1);
-
-        for (int i = 0; i < MeasuringPoint; i++)
-        {
-            double angle = startAngle + (step * i);
-            LidarData.Angles[PacketNumber * MeasuringPoint + i] = (angle / 100) * Math.PI / 180;
-            if (i == 0 && angle == startAngle
-                || i == (MeasuringPoint - 1) && angle == endAngle)
-                stepNum++;
-        }
-        if (stepNum == 2)
-            return true;
-        else
-        {
-            Debug.WriteLine(PacketNumber + ". packet have wrong step number");
-            return false;
-        }
     }
     #endregion
 
@@ -181,6 +149,41 @@ public class LidarPacket
         Buffer[PacketNumber] = buffer;
 
     }
+
+    /// <summary>
+    /// The Start angle of each package is increased by 12 steps to determine the final angle.
+    /// If the angles match, the packet was transmitted correctly.
+    /// </summary>
+    /// <param name="measuringPoint"> The number of measurement points in a data.(12) </param>
+    private bool CalStepAngle()
+    {
+        int stepNum;
+        double startAngle = (double)PacketValues[PacketNumber][3].Value;
+        double endAngle = (double)PacketValues[PacketNumber][4].Value;
+
+        stepNum = 0;
+        double step = (endAngle - startAngle) / (MeasuringPoint - 1);
+
+        for (int i = 0; i < MeasuringPoint; i++)
+        {
+            double angle = startAngle + (step * i);
+            LidarData.Angles[PacketNumber * MeasuringPoint + i] = (angle / 100) * Math.PI / 180;
+            if (i == 0 && angle == startAngle
+                || i == (MeasuringPoint - 1) && angle == endAngle)
+                stepNum++;
+        }
+        if (stepNum == 2)
+            return true;
+        else
+        {
+            Debug.WriteLine(PacketNumber + ". packet have wrong step number");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Validity of 38 transmitted packets is checked
+    /// </summary>
     private void IsLidarData()
     {
         if (CrcCheck && StepCheck)
@@ -194,7 +197,6 @@ public class LidarPacket
         }
         else
             Debug.WriteLine("Incorrect Data!!");
-       
     }
     #endregion
 }
