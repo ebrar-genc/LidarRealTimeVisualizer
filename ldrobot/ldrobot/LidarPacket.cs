@@ -41,6 +41,10 @@ public class LidarPacket
     /// Number of packets transmitted
     /// </summary>
     private int PacketNumber;
+    /// <summary>
+    /// Number of packets required for 450 measurement data
+    /// </summary>
+    private int TotalPacket;
 
     private List<List<(string Name, ushort Value)>> PacketValues;
 
@@ -61,6 +65,7 @@ public class LidarPacket
 
         MeasuringPoint = 12;
         PacketNumber = -1;
+        TotalPacket = 38;
         CrcCheck = true;
         StepCheck = true;
 
@@ -68,24 +73,28 @@ public class LidarPacket
         Debug.WriteLine("StopWatch is started!");
 
         PacketValues = new List<List<(string Name, ushort Value)>>();
-        Buffer = new byte[38][];
+        Buffer = new byte[TotalPacket][];
 
     }
     #endregion
 
     #region Private
     /// <summary>
-    /// Clears the internal state of the LidarPacket instance, preparing it for the next packet processing.
+    /// Data is cleared after 450 measurement data and preparing it for the next packet processing.
     /// </summary>
     private void Clear()
     {
+        // Reset packet-related variables
         PacketNumber = -1;
         CrcCheck = true;
         StepCheck = true;
 
+        // Clear LidarData arrays
         Array.Clear(LidarData.Angles, 0, LidarData.Angles.Length);
         Array.Clear(LidarData.Distance, 0, LidarData.Distance.Length);
         Array.Clear(LidarData.Intensity, 0, LidarData.Intensity.Length);
+
+        // Clear temporary packet-related collections
         PacketValues.Clear();
         Array.Clear(Buffer, 0, Buffer.Length);
     }
@@ -127,8 +136,8 @@ public class LidarPacket
     /// <param name="buffer"> 1 packet byte array </param>
     private void ParseLidarPacket(byte[] buffer)
     {
-        int j = 0;
         PacketValues.Add(new List<(string Name, ushort Value)>());
+
         PacketValues[PacketNumber].Add(("Header (1byte)", buffer[0]));
         PacketValues[PacketNumber].Add(("VerLen (1byte)", buffer[1])); // 3 bits packet type, 5 bits measurement points
         PacketValues[PacketNumber].Add(("Speed (LSB MSB)", (ushort)((buffer[3] << 8) | buffer[2]))); //degrees per second
@@ -137,7 +146,20 @@ public class LidarPacket
         PacketValues[PacketNumber].Add(("Timestamp (LSB MSB)", (ushort)((buffer[45] << 8) | buffer[44])));
         PacketValues[PacketNumber].Add(("Crc (1byte)", buffer[46])); // Crc
 
-        // Extract Data (2 bytes distance, 1 byte intensity per measurement point)
+        Buffer[PacketNumber] = buffer;
+
+        ExtractData(buffer);
+        
+    }
+
+    /// <summary>
+    /// 2 bytes distance, 1 byte intensity per measurement point. Save these variables in lidardata class variables
+    /// </summary>
+    /// <param name="buffer"></param>
+    private void ExtractData(byte[] buffer)
+    {
+        int j = 0;
+
         for (int i = 0; i < MeasuringPoint * 3; i += 3)
         {
             double distance = (ushort)((buffer[i + 7] << 8) | buffer[i + 6]) / 1000.0f;
@@ -146,8 +168,6 @@ public class LidarPacket
             LidarData.Intensity[PacketNumber * MeasuringPoint + j] = intensity;
             j++;
         }
-        Buffer[PacketNumber] = buffer;
-
     }
 
     /// <summary>
@@ -168,10 +188,12 @@ public class LidarPacket
         {
             double angle = startAngle + (step * i);
             LidarData.Angles[PacketNumber * MeasuringPoint + i] = (angle / 100) * Math.PI / 180;
+
             if (i == 0 && angle == startAngle
                 || i == (MeasuringPoint - 1) && angle == endAngle)
                 stepNum++;
         }
+
         if (stepNum == 2)
             return true;
         else
