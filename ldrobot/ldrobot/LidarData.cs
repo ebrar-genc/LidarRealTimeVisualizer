@@ -8,13 +8,18 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ldrobot
 {
-    class LidarData
+    public class LidarData
     {
         #region Parameters
         /// <summary>
         /// object to write information to txt file
         /// </summary>
         private AppendToFile AppendToFile;
+
+        /// <summary>
+        /// Sends data to WPF using netMQ
+        /// </summary>
+        private LidarDataPublisher Publisher;
 
         /// <summary>
         /// Array of angles. radians.
@@ -62,6 +67,7 @@ namespace ldrobot
 
 
             AppendToFile = new AppendToFile();
+            Publisher = new LidarDataPublisher("tcp://localhost:3001");
 
 
         }
@@ -80,13 +86,31 @@ namespace ldrobot
         #region Public Functions
         /// <summary>
         /// Sends lidar data to write to file
+        ///  Sends byte array to WP using publisher class
         /// </summary>
         public void SendData()
         {
+            byte[] byteArray;
+
             PolarToCartesian();
             AppendToFile.AppendCorrectDatas(Angles, Distance, Intensity, X, Y);
 
-            Clear();
+            byteArray = DoubleToByteArray();
+            Publisher.SendMessage(byteArray);
+        }
+
+        /// <summary>
+        /// It combines the created Cartesian coordinate values ​​and converts them into a byte array to send to WPF.
+        /// </summary>
+        /// <returns> value to send to wpf </returns>
+        public byte[] DoubleToByteArray()
+        {
+            double[] xyCombined = X.Concat(Y).ToArray();
+
+            byte[] byteArray = new byte[xyCombined.Length * sizeof(double)];
+            Buffer.BlockCopy(xyCombined, 0, byteArray, 0, byteArray.Length);
+
+            return byteArray;
         }
 
         /// <summary>
