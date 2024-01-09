@@ -14,13 +14,13 @@ namespace WpfApp2
         /// <summary>
         /// Array of angles. radians.
         /// </summary>
-        private double[] Angles;
+        public double[] Angles;
         /// <summary>
         /// distance information of the lidar data
         /// </summary>
-        private double[] Distance;
-        private double[] X;
-        private double[] Y;
+        public double[] Distance;
+        public double[] X;
+        public double[] Y;
         /// <summary>
         /// Number of packets required for 1 data
         /// </summary>
@@ -50,12 +50,14 @@ namespace WpfApp2
         #endregion
 
         #region Public Functions
-        public void ParseData(byte[] byteArray)
+        public Tuple<double[], double[], double[]> ParseData(byte[] byteArray)
         {
             ParseByteArray(byteArray);
             PolarToCartesian();
             AppendToFile.AppendLidarDatas(Angles, Distance, X, Y);
-            Clear();
+            var result = Tuple.Create(Angles, X, Y);
+           // Clear();
+            return result;
         }
         #endregion
 

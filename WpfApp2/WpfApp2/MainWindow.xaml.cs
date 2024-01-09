@@ -9,38 +9,45 @@ namespace WpfApp2
 {
     public partial class MainWindow : Window
     {
+        private LidarDataSubscriber subscriber;
+        private DrawPointCloud draw;
         public MainWindow()
         {
-            LidarDataSubscriber subscriber;
+            try
+            {
+                InitializeComponent();
+                subscriber = new LidarDataSubscriber("tcp://localhost:3001");
+                draw = new DrawPointCloud(lidarCanvas);
+                InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Exception: " + ex.Message);
+            }
 
-            InitializeComponent();
-            subscriber = new LidarDataSubscriber("tcp://localhost:3001");
-            subscriber.ListenForMessages();
+
         }
 
-       /* public void DrawLidarData(double[] angles, double[] distances)
+        private async void InitializeAsync()
         {
-            lidarCanvas.Children.Clear();
-
-            for (int i = 0; i < angles.Length; i++)
+            await Task.Run(async () =>
             {
-                Ellipse ellipse = new Ellipse
+                while (true)
                 {
-                    Width = 5,
-                    Height = 5,
-                    Fill = Brushes.Blue
-                };
+                    var result = await subscriber.ListenForMessages();
 
-                double x = distances[i] * Math.Cos(angles[i]);
-                double y = distances[i] * Math.Sin(angles[i]);
+                    double[] angles = result.Item1;
+                    double[] x = result.Item2;
+                    double[] y = result.Item3;
+                    Dispatcher.Invoke(() =>
+                    {
+                        draw.DrawPoints(angles, x, y);
+                    });
+                }
+            });
 
-                Canvas.SetLeft(ellipse, x);
-                Canvas.SetTop(ellipse, y);
+        }
 
-                lidarCanvas.Children.Add(ellipse);
-            }
-        }*/
     }
-
 }
 

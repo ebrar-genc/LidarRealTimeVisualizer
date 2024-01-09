@@ -46,7 +46,7 @@ namespace WpfApp2
                 sw.WriteLine("****** " + Num + ". Data******");
                 for (int j = 0; j < angles.Length; j++)
                 {
-                    sw.WriteLine(i + ". Angle: " + angles[j].ToString("F3") + " radian,     Distance: " + distance[j].ToString("F3") + " meter,     Intensity: ");
+                    sw.WriteLine(i + ". Angle: " + angles[j].ToString("F3") + " radian,     Distance: " + distance[j].ToString("F3") + " meter");
                     sw.WriteLine("X coordinate: " + x[j].ToString("F3") + ",       Y coordinate: " + y[j].ToString("F3") + "\n");
                     i++;
                 }

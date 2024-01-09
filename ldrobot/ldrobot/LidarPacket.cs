@@ -210,8 +210,8 @@ public class LidarPacket
     {
         if (CrcCheck && StepCheck)
         {
-            Debug.WriteLine("Correct Data!!");
-            Console.WriteLine("Seconds of delivery of 38 packages: " + StopWatch.Elapsed.TotalSeconds);
+            //Debug.WriteLine("Correct Data!!");
+           //Console.WriteLine("Seconds of delivery of 38 packages: " + StopWatch.Elapsed.TotalSeconds);
             StopWatch.Restart();
 
             AppendToFile.AppendPackets(PacketValues, Buffer);

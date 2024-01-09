@@ -50,19 +50,23 @@ namespace WpfApp2
         /// <summary>
         /// Listens for messages from the PublisherSocket.
         /// </summary>
-        public void ListenForMessages()
+        public async Task<Tuple<double[], double[], double[]>> ListenForMessages()
         {
             while (true)
             {
+
                 if (Subscriber != null)
                 {
                     byte[] message = Subscriber.ReceiveFrameBytes();
-                    Parser.ParseData(message);
+                    var parsedData = Parser.ParseData(message);
+                    return parsedData;
                 }
                 else
                 {
                     Debug.WriteLine("Subscriber not initialized.");
                 }
+
+                await Task.Delay(100);
             }
         }
 
@@ -78,6 +82,7 @@ namespace WpfApp2
             Subscriber = new SubscriberSocket();
             Subscriber.Connect(Endpoint);
             Subscriber.SubscribeToAnyTopic();
+            Debug.WriteLine("Subscriber Started!");
         }
 
         #endregion
