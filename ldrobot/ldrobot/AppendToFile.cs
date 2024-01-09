@@ -80,7 +80,7 @@ namespace ldrobot
         /// <param name="angles"> Each Lidar measurement points angles.</param>
         /// <param name="distance">Array of distances for each Lidar measurement point.</param>
         /// <param name="intensity">Array of intensities for each Lidar measurement point.</param>
-        public void AppendCorrectDatas(double[] angles, double[] distance, double[] intensity, double[] x, double[] y)
+        public void AppendCorrectDatas(double[] angles, double[] distance, double[] intensity)
         {
             int i = 1;
 
@@ -89,8 +89,8 @@ namespace ldrobot
                 sw.WriteLine("****** " + CorrectNum + ". Data******");
                 for (int j = 0; j < angles.Length; j++)
                 {
-                    sw.WriteLine(i + ". Angle: " + angles[j].ToString("F3") + " radian,     Distance: " + distance[j].ToString("F3") + " meter,     Intensity: " + intensity[j].ToString("F3") + " meter");
-                    sw.WriteLine("X coordinate: " + x[j].ToString("F3") + ",       Y coordinate: " + y[j].ToString("F3") + "\n");
+                    sw.WriteLine(i + ". Angle: " + angles[j].ToString("F3") + " radian,     Distance: " + distance[j].ToString("F3") + " meter,     Intensity: " + intensity[j].ToString("F3"));
+                    //sw.WriteLine("X coordinate: " + x[j].ToString("F3") + ",       Y coordinate: " + y[j].ToString("F3") + "\n");
                     i++;
                 }
                 sw.WriteLine("\n\n");

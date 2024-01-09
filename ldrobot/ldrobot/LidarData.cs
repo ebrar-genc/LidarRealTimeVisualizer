@@ -44,8 +44,7 @@ namespace ldrobot
         /// </summary>
         private int MeasuringPoint;
 
-        private double[] X;
-        private double[] Y;
+
        // private double[] Z;
 
         #endregion
@@ -63,10 +62,6 @@ namespace ldrobot
             Distance = new double[MeasuringPoint * PacketNum];
             Intensity = new double[MeasuringPoint * PacketNum];
 
-            X = new double[MeasuringPoint * PacketNum];
-            Y = new double[MeasuringPoint * PacketNum]; 
-          //  Z = new double[MeasuringPoint * PacketNum];
-
 
             AppendToFile = new AppendToFile();
             Publisher = new LidarDataPublisher("tcp://localhost:3001");
@@ -77,12 +72,7 @@ namespace ldrobot
 
         #region Private
 
-        private void Clear()
-        {
-            Array.Clear(X, 0, X.Length);
-            Array.Clear(Y, 0, Y.Length);
-
-        }
+    
         #endregion
 
         #region Public Functions
@@ -94,46 +84,41 @@ namespace ldrobot
         {
             byte[] byteArray;
 
-            PolarToCartesian();
-            AppendToFile.AppendCorrectDatas(Angles, Distance, Intensity, X, Y);
+            AppendToFile.AppendCorrectDatas(Angles, Distance, Intensity);
 
             byteArray = DoubleArrayToByteArray();
 
             Publisher.SendMessage(byteArray);
 
-            
+            Clear();
 
         }
 
         /// <summary>
-        /// It combines the created Cartesian coordinate values ​​and converts them into a byte array to send to WPF.
+        /// It combines the angles and didstance values ​​and converts them into a byte array to send to WPF.
         /// </summary>
         /// <returns> value to send to wpf </returns>
         private byte[] DoubleArrayToByteArray()
         {
-            int totalLength = X.Length + Y.Length + Angles.Length;
+            int totalLength = Angles.Length + Distance.Length;
             double[] combined = new double[totalLength];
 
-            X.CopyTo(combined, 0);
-            Y.CopyTo(combined, X.Length);
-            Angles.CopyTo(combined, X.Length + Y.Length);
-
+            Angles.CopyTo(combined, 0);
+            Distance.CopyTo(combined, Angles.Length);
             byte[] byteArray = new byte[totalLength * sizeof(double)];
             Buffer.BlockCopy(combined, 0, byteArray, 0, byteArray.Length);
 
             return byteArray;
         }
 
-        /// <summary>
-        /// Converts polar coordinates to Cartesian coordinates.
-        /// </summary>
-        public void PolarToCartesian()
+        private void Clear()
         {
-            for (int i = 0; i < MeasuringPoint * PacketNum; i++)
-            {
-                X[i] = Distance[i] * Math.Cos(Angles[i]);
-                Y[i] = Distance[i] * Math.Sin(Angles[i]);
-            }
+            Array.Clear(Angles, 0, Angles.Length);
+            Array.Clear(Distance, 0, Distance.Length);
+            Array.Clear(Intensity, 0, Intensity.Length);
+
+
+
         }
         #endregion
 

@@ -11,6 +11,7 @@ namespace WpfApp2
     {
         #region Parameters
         private SubscriberSocket Subscriber;
+        private LidarDataParser Parser;
         /// <summary>
         /// specified endpoint.
         /// </summary>
@@ -26,6 +27,7 @@ namespace WpfApp2
         public LidarDataSubscriber(string endpoint)
         {
             Endpoint = endpoint;
+            Parser = new LidarDataParser();
             InitializeSubscriber();
         }
 
@@ -54,8 +56,8 @@ namespace WpfApp2
             {
                 if (Subscriber != null)
                 {
-                    string message = Subscriber.ReceiveFrameString();      
-                    //Debug.WriteLine("Received message: " + message);
+                    byte[] message = Subscriber.ReceiveFrameBytes();
+                    Parser.ParseData(message);
                 }
                 else
                 {
