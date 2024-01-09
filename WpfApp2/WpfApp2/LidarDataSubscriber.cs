@@ -1,0 +1,83 @@
+﻿using NetMQ;
+using NetMQ.Sockets;
+using System.Diagnostics;
+
+namespace WpfApp2
+{
+    /// <summary>
+    /// LidarDataSubscriber class subscribes to a PublisherSocket using NetMQ and receives messages.
+    /// </summary>
+    public class LidarDataSubscriber
+    {
+        #region Parameters
+        private SubscriberSocket Subscriber;
+        /// <summary>
+        /// specified endpoint.
+        /// </summary>
+        private string Endpoint;
+        #endregion
+
+        #region Public
+
+        /// <summary>
+        /// Initializes the LidarDataSubscriber class and connects it to the specified endpoint.
+        /// </summary>
+        /// <param name="endpoint">The endpoint to connect the SubscriberSocket to.</param>
+        public LidarDataSubscriber(string endpoint)
+        {
+            Endpoint = endpoint;
+            InitializeSubscriber();
+        }
+
+        #endregion
+
+        #region Private
+
+        /// <summary>
+        /// Disposes of the SubscriberSocket when the LidarDataSubscriber instance is no longer needed.
+        /// </summary>
+        private void Dispose()
+        {
+            Subscriber?.Dispose();
+        }
+
+        #endregion
+
+        #region Public Functions
+
+        /// <summary>
+        /// Listens for messages from the PublisherSocket.
+        /// </summary>
+        public void ListenForMessages()
+        {
+            while (true)
+            {
+                if (Subscriber != null)
+                {
+                    string message = Subscriber.ReceiveFrameString();      
+                    //Debug.WriteLine("Received message: " + message);
+                }
+                else
+                {
+                    Debug.WriteLine("Subscriber not initialized.");
+                }
+            }
+        }
+
+        #endregion
+
+        #region Private Functions
+
+        /// <summary>
+        /// Initializes the SubscriberSocket by creating a new instance and connecting it to the specified endpoint.
+        /// </summary>
+        private void InitializeSubscriber()
+        {
+            Subscriber = new SubscriberSocket();
+            Subscriber.Connect(Endpoint);
+            Subscriber.SubscribeToAnyTopic();
+        }
+
+        #endregion
+    }
+}

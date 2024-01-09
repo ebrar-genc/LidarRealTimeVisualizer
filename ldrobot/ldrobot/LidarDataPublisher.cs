@@ -52,15 +52,11 @@ namespace ldrobot
         /// <param name="message">The byte array message to be sent.</param>
         public void SendMessage(byte[] message)
         {
-            string message2 = "ebrar";
-
-            string msg = BitConverter.ToString(message);
             if (Publisher != null)
             {
-                Publisher.SendFrame(message2);
                 Publisher.SendFrame(message);
 
-                Console.WriteLine("Sent message: " + message2 + "    anddd    " + msg);
+                Console.WriteLine("Sent message: ");
             }
             else
             {
