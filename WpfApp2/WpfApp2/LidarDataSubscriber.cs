@@ -50,7 +50,7 @@ namespace WpfApp2
         /// <summary>
         /// Listens for messages from the PublisherSocket.
         /// </summary>
-        public async Task<Tuple<double[], double[], double[]>> ListenForMessages()
+        public async Task<Tuple<double[], double[]>> ListenForMessages()
         {
             while (true)
             {

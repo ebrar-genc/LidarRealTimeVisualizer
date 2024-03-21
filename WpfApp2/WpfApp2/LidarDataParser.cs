@@ -50,12 +50,12 @@ namespace WpfApp2
         #endregion
 
         #region Public Functions
-        public Tuple<double[], double[], double[]> ParseData(byte[] byteArray)
+        public Tuple<double[], double[]> ParseData(byte[] byteArray)
         {
             ParseByteArray(byteArray);
             PolarToCartesian();
             AppendToFile.AppendLidarDatas(Angles, Distance, X, Y);
-            var result = Tuple.Create(Angles, X, Y);
+            var result = Tuple.Create(X, Y);
            // Clear();
             return result;
         }

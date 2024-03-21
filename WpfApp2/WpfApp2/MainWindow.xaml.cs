@@ -36,12 +36,12 @@ namespace WpfApp2
                 {
                     var result = await subscriber.ListenForMessages();
 
-                    double[] angles = result.Item1;
-                    double[] x = result.Item2;
-                    double[] y = result.Item3;
+                    double[] x = result.Item1;
+                    double[] y = result.Item2;
                     Dispatcher.Invoke(() =>
                     {
-                        draw.DrawPoints(angles, x, y);
+                        draw.DrawPoints(x, y);
+
                     });
                 }
             });

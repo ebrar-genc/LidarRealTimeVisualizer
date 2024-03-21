@@ -101,12 +101,12 @@ namespace ldrobot
         private byte[] DoubleArrayToByteArray()
         {
             int totalLength = Angles.Length + Distance.Length;
-            double[] combined = new double[totalLength];
+            double[] doubleCombined = new double[totalLength];
 
-            Angles.CopyTo(combined, 0);
-            Distance.CopyTo(combined, Angles.Length);
+            Angles.CopyTo(doubleCombined, 0);
+            Distance.CopyTo(doubleCombined, Angles.Length);
             byte[] byteArray = new byte[totalLength * sizeof(double)];
-            Buffer.BlockCopy(combined, 0, byteArray, 0, byteArray.Length);
+            Buffer.BlockCopy(doubleCombined, 0, byteArray, 0, byteArray.Length);
 
             return byteArray;
         }

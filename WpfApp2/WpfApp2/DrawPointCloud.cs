@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 using System.Windows.Shapes;
 
 namespace WpfApp2
@@ -13,41 +14,45 @@ namespace WpfApp2
     public class DrawPointCloud
     {
         private Canvas Canvas;
+        private double Centerx;
+        private double Centery;
+        private int a;
 
-        public DrawPointCloud(Canvas canvas)
+        public DrawPointCloud(Canvas lidarCanvas)
         {
-            Canvas = canvas;
+            Canvas = lidarCanvas;
+            Centerx = 400;
+            Centery = 225;
+            a = 0;
         }
 
 
-        public void DrawPoints(double[] angles, double[] x, double[] y)
+        public void DrawPoints(double[] x, double[] y)
         {
             Canvas.Children.Clear();
             SolidColorBrush blackBrush = new SolidColorBrush();
             blackBrush.Color = Colors.Black;
 
-            for (int i = 0; i < angles.Length; i++)
+            for (int i = 0; i < 800; i++)
             {
-
-                double angle = angles[i];
-                double radius = 100;
-
-                double ellipseLeft = Canvas.Width / 2 + x[i];
-                double ellipseTop = Canvas.Height / 2 + y[i];
                 Ellipse ellipse = new Ellipse
                 {
-                    Width = 10,
-                    Height = 10,
+                    Width = 5,
+                    Height = 5,
                     Fill = blackBrush
                 };
 
-                Canvas.SetLeft(ellipse, ellipseLeft - ellipse.Width / 2);
-                Canvas.SetTop(ellipse, ellipseTop - ellipse.Height / 2);
-                Debug.WriteLine($"Elips Çizildi - X: {ellipseLeft}, Y: {ellipseTop}");
+
+                Canvas.SetLeft(ellipse, i);
+                Canvas.SetTop(ellipse,0);
+               // Canvas.SetLeft(ellipse, Centerx + x[i]);
+               // Canvas.SetTop(ellipse, Centery - y[i]);
+                Debug.WriteLine("Elips Çizildi - X: " + Centerx);
 
                 Canvas.Children.Add(ellipse);
 
             }
+            a++;
 
         }
 
