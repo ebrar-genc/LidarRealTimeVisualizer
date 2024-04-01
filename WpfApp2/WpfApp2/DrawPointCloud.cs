@@ -16,24 +16,25 @@ namespace WpfApp2
         private Canvas Canvas;
         private double Centerx;
         private double Centery;
-        private int a;
+        private int EllipsesCount;
+
 
         public DrawPointCloud(Canvas lidarCanvas)
         {
             Canvas = lidarCanvas;
             Centerx = 400;
             Centery = 225;
-            a = 0;
-        }
+            EllipsesCount = 456;
+    }
 
 
-        public void DrawPoints(double[] x, double[] y)
+    public void DrawPoints(double[] x, double[] y)
         {
             Canvas.Children.Clear();
             SolidColorBrush blackBrush = new SolidColorBrush();
             blackBrush.Color = Colors.Black;
 
-            for (int i = 0; i < 800; i++)
+            for (int i = 0; i < EllipsesCount; i++)
             {
                 Ellipse ellipse = new Ellipse
                 {
@@ -41,18 +42,12 @@ namespace WpfApp2
                     Height = 5,
                     Fill = blackBrush
                 };
-
-
-                Canvas.SetLeft(ellipse, i);
-                Canvas.SetTop(ellipse,0);
-               // Canvas.SetLeft(ellipse, Centerx + x[i]);
-               // Canvas.SetTop(ellipse, Centery - y[i]);
-                Debug.WriteLine("Elips Çizildi - X: " + Centerx);
+                Canvas.SetLeft(ellipse, Centerx - x[i]);
+                Canvas.SetTop(ellipse, Centery - y[i]);
 
                 Canvas.Children.Add(ellipse);
 
             }
-            a++;
 
         }
 

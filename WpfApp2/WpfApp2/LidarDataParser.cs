@@ -76,8 +76,8 @@ namespace WpfApp2
         {
             for (int i = 0; i < SegmentLength; i++)
             {
-                X[i] = Distance[i] * Math.Cos(Angles[i]);
-                Y[i] = Distance[i] * Math.Sin(Angles[i]);
+                X[i] = Distance[i] * Math.Cos(Angles[i]) * 10;
+                Y[i] = Distance[i] * Math.Sin(Angles[i]) * 10;
             }
         }
 
